@@ -1,10 +1,12 @@
 use core::num;
+use std::f32::consts::E;
 
-use icu_locid::{locale, Locale};
+use icu_locid::{langid, locale, Locale};
 
 #[derive(Debug)]
 enum Error {
     UnsupportedLocale,
+    UnsupportedNumberType,
     NumberOutOfRange,
 }
 
@@ -27,13 +29,25 @@ fn spellout_number(
     locale: Locale,
     modifier: NumberModifier,
 ) -> Result<impl Fn(u64) -> Result<String, Error>, Error> {
-    match modifier.number_type {
-        NumberType::Cardinal => Ok(spellout_en_cardinal as fn(u64) -> Result<String, Error>),
-        NumberType::Ordinal => Ok(spellout_en_ordinal as fn(u64) -> Result<String, Error>),
+    let langid_en = langid!("en");
+    let langid_sv = langid!("sv");
+
+    if locale.id == langid_en {
+        match modifier.number_type {
+            NumberType::Cardinal => Ok(number_en_cardinal as fn(u64) -> Result<String, Error>),
+            NumberType::Ordinal => Ok(number_en_ordinal as fn(u64) -> Result<String, Error>),
+        }
+    } else if locale.id == langid_sv {
+        match modifier.number_type {
+            NumberType::Cardinal => Ok(number_sv_cardinal as fn(u64) -> Result<String, Error>),
+            _ => Err(Error::UnsupportedNumberType),
+        }
+    } else {
+        Err(Error::UnsupportedLocale)
     }
 }
 
-fn spellout_en_cardinal(num: u64) -> Result<String, Error> {
+fn number_en_cardinal(num: u64) -> Result<String, Error> {
     match num {
         2 => Ok("two".to_string()),
         3 => Ok("three".to_string()),
@@ -41,9 +55,17 @@ fn spellout_en_cardinal(num: u64) -> Result<String, Error> {
     }
 }
 
-fn spellout_en_ordinal(num: u64) -> Result<String, Error> {
+fn number_en_ordinal(num: u64) -> Result<String, Error> {
     match num {
         2 => Ok("second".to_string()),
+        _ => Err(Error::NumberOutOfRange),
+    }
+}
+
+fn number_sv_cardinal(num: u64) -> Result<String, Error> {
+    match num {
+        2 => Ok("två".to_string()),
+        3 => Ok("tre".to_string()),
         _ => Err(Error::NumberOutOfRange),
     }
 }
@@ -70,5 +92,12 @@ mod tests {
         let modifier = NumberModifier::new(NumberType::Ordinal, "stuff");
         let spellout_number_en_cardinal = spellout_number(locale!("en"), modifier).unwrap();
         assert_eq!(spellout_number_en_cardinal(2).unwrap(), "second");
+    }
+
+    #[test]
+    fn test_spellout_number_three_cardinal_swedish() {
+        let modifier = NumberModifier::new(NumberType::Cardinal, "stuff");
+        let spellout_number_en_cardinal = spellout_number(locale!("sv"), modifier).unwrap();
+        assert_eq!(spellout_number_en_cardinal(3).unwrap(), "tre");
     }
 }
