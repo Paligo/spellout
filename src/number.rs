@@ -89,8 +89,8 @@ mod tests {
     #[test]
     fn test_spellout_number_two_ordinal() {
         let modifier = NumberModifier::new(NumberType::Ordinal, "stuff");
-        let spellout_number_en_cardinal = spellout_number(locale!("en"), modifier).unwrap();
-        assert_eq!(spellout_number_en_cardinal(2).unwrap(), "second");
+        let spellout_number_en_ordinal = spellout_number(locale!("en"), modifier).unwrap();
+        assert_eq!(spellout_number_en_ordinal(2).unwrap(), "second");
     }
 
     #[test]
