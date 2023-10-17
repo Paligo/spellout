@@ -1,7 +1,4 @@
-use core::num;
-use std::f32::consts::E;
-
-use icu_locid::{langid, locale, Locale};
+use icu_locid::{langid, Locale};
 
 #[derive(Debug)]
 enum Error {
@@ -73,6 +70,8 @@ fn number_sv_cardinal(num: u64) -> Result<String, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use icu_locid::locale;
 
     #[test]
     fn test_spellout_number_three() {
