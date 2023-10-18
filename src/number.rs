@@ -12,6 +12,7 @@ enum NumberType {
     Ordinal,
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 enum Case {
     Lower,
     Upper,
@@ -29,29 +30,34 @@ impl NumberModifier {
     }
 }
 
-fn spellout_number(
-    locale: Locale,
-    modifier: NumberModifier,
-) -> Result<impl Fn(u64) -> Result<String, Error>, Error> {
+type SpelloutNumber = Box<dyn Fn(u64) -> Result<String, Error>>;
+
+fn spellout_number(locale: Locale, modifier: NumberModifier) -> Result<SpelloutNumber, Error> {
     let langid_en = langid!("en");
     let langid_sv = langid!("sv");
 
-    if locale.id == langid_en {
+    let spellout_number = if locale.id == langid_en {
         match modifier.number_type {
-            NumberType::Cardinal => Ok(number_en_cardinal as fn(u64) -> Result<String, Error>),
-            NumberType::Ordinal => Ok(number_en_ordinal as fn(u64) -> Result<String, Error>),
+            NumberType::Cardinal => {
+                Ok(number_en_cardinal as fn(u64, Case) -> Result<String, Error>)
+            }
+            NumberType::Ordinal => Ok(number_en_ordinal as fn(u64, Case) -> Result<String, Error>),
         }
     } else if locale.id == langid_sv {
         match modifier.number_type {
-            NumberType::Cardinal => Ok(number_sv_cardinal as fn(u64) -> Result<String, Error>),
+            NumberType::Cardinal => {
+                Ok(number_sv_cardinal as fn(u64, Case) -> Result<String, Error>)
+            }
             _ => Err(Error::UnsupportedNumberType),
         }
     } else {
         Err(Error::UnsupportedLocale)
-    }
+    }?;
+
+    Ok(Box::new(move |num| spellout_number(num, modifier.case)))
 }
 
-fn number_en_cardinal(num: u64) -> Result<String, Error> {
+fn number_en_cardinal(num: u64, case: Case) -> Result<String, Error> {
     match num {
         2 => Ok("two".to_string()),
         3 => Ok("three".to_string()),
@@ -59,14 +65,14 @@ fn number_en_cardinal(num: u64) -> Result<String, Error> {
     }
 }
 
-fn number_en_ordinal(num: u64) -> Result<String, Error> {
+fn number_en_ordinal(num: u64, case: Case) -> Result<String, Error> {
     match num {
         2 => Ok("second".to_string()),
         _ => Err(Error::NumberOutOfRange),
     }
 }
 
-fn number_sv_cardinal(num: u64) -> Result<String, Error> {
+fn number_sv_cardinal(num: u64, case: Case) -> Result<String, Error> {
     match num {
         2 => Ok("två".to_string()),
         3 => Ok("tre".to_string()),
