@@ -109,6 +109,18 @@ fn number_en_cardinal(num: u64, format: &str) -> Result<String, Error> {
                 Ok(format!("{}-{}", tens_str, ones))
             }
         }
+        100..=999 => {
+            let hundreds = num / 100;
+            let remainder = num % 100;
+            let count = number_en_cardinal(hundreds, format)?;
+            let hundreds_str = format!("{} Hundred", count);
+            if remainder == 0 {
+                Ok(hundreds_str)
+            } else {
+                let remainder_str = number_en_cardinal(remainder, format)?;
+                Ok(format!("{} and {}", hundreds_str, remainder_str))
+            }
+        }
         _ => Err(Error::NumberOutOfRange),
     }
 }
@@ -187,5 +199,22 @@ mod tests {
         let modifier = NumberModifier::new(NumberType::Cardinal, Case::Title, "".to_string());
         let spellout_number_en_cardinal = spellout_number(locale!("en"), modifier).unwrap();
         assert_eq!(spellout_number_en_cardinal(21).unwrap(), "Twenty-One");
+    }
+
+    #[test]
+    fn test_spellout_number_100() {
+        let modifier = NumberModifier::new(NumberType::Cardinal, Case::Title, "".to_string());
+        let spellout_number_en_cardinal = spellout_number(locale!("en"), modifier).unwrap();
+        assert_eq!(spellout_number_en_cardinal(100).unwrap(), "One Hundred");
+    }
+
+    #[test]
+    fn test_spellout_number_143() {
+        let modifier = NumberModifier::new(NumberType::Cardinal, Case::Title, "".to_string());
+        let spellout_number_en_cardinal = spellout_number(locale!("en"), modifier).unwrap();
+        assert_eq!(
+            spellout_number_en_cardinal(143).unwrap(),
+            "One Hundred and Forty-Three"
+        );
     }
 }
