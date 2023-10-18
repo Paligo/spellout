@@ -12,13 +12,20 @@ enum NumberType {
     Ordinal,
 }
 
+enum Case {
+    Lower,
+    Upper,
+    Title,
+}
+
 struct NumberModifier {
     number_type: NumberType,
+    case: Case,
 }
 
 impl NumberModifier {
-    fn new(number_type: NumberType, format: &str) -> Self {
-        NumberModifier { number_type }
+    fn new(number_type: NumberType, case: Case) -> Self {
+        NumberModifier { number_type, case }
     }
 }
 
@@ -75,27 +82,27 @@ mod tests {
 
     #[test]
     fn test_spellout_number_three() {
-        let modifier = NumberModifier::new(NumberType::Cardinal, "stuff");
+        let modifier = NumberModifier::new(NumberType::Cardinal, Case::Lower);
         let spellout_number_en_cardinal = spellout_number(locale!("en"), modifier).unwrap();
         assert_eq!(spellout_number_en_cardinal(3).unwrap(), "three");
     }
 
     #[test]
     fn test_spellout_number_two() {
-        let modifier = NumberModifier::new(NumberType::Cardinal, "stuff");
+        let modifier = NumberModifier::new(NumberType::Cardinal, Case::Lower);
         let spellout_number_en_cardinal = spellout_number(locale!("en"), modifier).unwrap();
         assert_eq!(spellout_number_en_cardinal(2).unwrap(), "two");
     }
     #[test]
     fn test_spellout_number_two_ordinal() {
-        let modifier = NumberModifier::new(NumberType::Ordinal, "stuff");
+        let modifier = NumberModifier::new(NumberType::Ordinal, Case::Lower);
         let spellout_number_en_ordinal = spellout_number(locale!("en"), modifier).unwrap();
         assert_eq!(spellout_number_en_ordinal(2).unwrap(), "second");
     }
 
     #[test]
     fn test_spellout_number_three_cardinal_swedish() {
-        let modifier = NumberModifier::new(NumberType::Cardinal, "stuff");
+        let modifier = NumberModifier::new(NumberType::Cardinal, Case::Lower);
         let spellout_number_en_cardinal = spellout_number(locale!("sv"), modifier).unwrap();
         assert_eq!(spellout_number_en_cardinal(3).unwrap(), "tre");
     }
