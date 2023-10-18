@@ -1,5 +1,28 @@
 use icu_locid::{langid, Locale};
 
+const ENGLISH_UNITS: [&str; 20] = [
+    "Zero",
+    "One",
+    "Two",
+    "Three",
+    "Four",
+    "Five",
+    "Six",
+    "Seven",
+    "Eight",
+    "Nine",
+    "Ten",
+    "Eleven",
+    "Twelve",
+    "Thirteen",
+    "Fourteen",
+    "Fifteen",
+    "Sixteen",
+    "Seventeen",
+    "Eighteen",
+    "Nineteen",
+];
+
 #[derive(Debug)]
 enum Error {
     UnsupportedLocale,
@@ -70,8 +93,7 @@ fn spellout_number(locale: Locale, modifier: NumberModifier) -> Result<SpelloutN
 
 fn number_en_cardinal(num: u64, format: &str) -> Result<String, Error> {
     match num {
-        2 => Ok("Two".to_string()),
-        3 => Ok("Three".to_string()),
+        0..=19 => Ok(ENGLISH_UNITS[num as usize].to_string()),
         _ => Err(Error::NumberOutOfRange),
     }
 }
@@ -129,5 +151,12 @@ mod tests {
         let modifier = NumberModifier::new(NumberType::Cardinal, Case::Title, "".to_string());
         let spellout_number_en_cardinal = spellout_number(locale!("en"), modifier).unwrap();
         assert_eq!(spellout_number_en_cardinal(3).unwrap(), "Three");
+    }
+
+    #[test]
+    fn test_spellout_number_18() {
+        let modifier = NumberModifier::new(NumberType::Cardinal, Case::Title, "".to_string());
+        let spellout_number_en_cardinal = spellout_number(locale!("en"), modifier).unwrap();
+        assert_eq!(spellout_number_en_cardinal(18).unwrap(), "Eighteen");
     }
 }
