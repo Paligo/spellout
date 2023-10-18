@@ -96,6 +96,10 @@ fn spellout_number(locale: Locale, modifier: NumberModifier) -> Result<SpelloutN
 }
 
 fn number_en_cardinal(num: u64, format: &str) -> Result<String, Error> {
+    number_en_cardinal_helper(num)
+}
+
+fn number_en_cardinal_helper(num: u64) -> Result<String, Error> {
     match num {
         0..=19 => Ok(ENGLISH_UNITS[num as usize].to_string()),
         20..=99 => {
@@ -105,23 +109,28 @@ fn number_en_cardinal(num: u64, format: &str) -> Result<String, Error> {
             if units == 0 {
                 Ok(tens_str)
             } else {
-                let ones = number_en_cardinal(units, format)?;
+                let ones = number_en_cardinal_helper(units)?;
                 Ok(format!("{}-{}", tens_str, ones))
             }
         }
-        100..=999 => {
-            let hundreds = num / 100;
-            let remainder = num % 100;
-            let count = number_en_cardinal(hundreds, format)?;
-            let hundreds_str = format!("{} Hundred", count);
-            if remainder == 0 {
-                Ok(hundreds_str)
-            } else {
-                let remainder_str = number_en_cardinal(remainder, format)?;
-                Ok(format!("{} and {}", hundreds_str, remainder_str))
-            }
-        }
+        100..=999 => beyond_tens(num, 100, "Hundred"),
+        1000..=999_999 => beyond_tens(num, 1000, "Thousand"),
+        1_000_000..=999_999_999 => beyond_tens(num, 1_000_000, "Million"),
+        1_000_000_000..=999_999_999_999 => beyond_tens(num, 1_000_000_000, "Billion"),
         _ => Err(Error::NumberOutOfRange),
+    }
+}
+
+fn beyond_tens(num: u64, divisor: u64, word: &str) -> Result<String, Error> {
+    let divided = num / divisor;
+    let remainder = num % divisor;
+    let count = number_en_cardinal_helper(divided)?;
+    let s = format!("{} {}", count, word);
+    if remainder == 0 {
+        Ok(s)
+    } else {
+        let remainder_str = number_en_cardinal_helper(remainder)?;
+        Ok(format!("{} and {}", s, remainder_str))
     }
 }
 
@@ -215,6 +224,26 @@ mod tests {
         assert_eq!(
             spellout_number_en_cardinal(143).unwrap(),
             "One Hundred and Forty-Three"
+        );
+    }
+
+    #[test]
+    fn test_spellout_number_4321() {
+        let modifier = NumberModifier::new(NumberType::Cardinal, Case::Title, "".to_string());
+        let spellout_number_en_cardinal = spellout_number(locale!("en"), modifier).unwrap();
+        assert_eq!(
+            spellout_number_en_cardinal(4321).unwrap(),
+            "Four Thousand and Three Hundred and Twenty-One"
+        );
+    }
+
+    #[test]
+    fn test_spellout_number_123_987_654_321() {
+        let modifier = NumberModifier::new(NumberType::Cardinal, Case::Title, "".to_string());
+        let spellout_number_en_cardinal = spellout_number(locale!("en"), modifier).unwrap();
+        assert_eq!(
+            spellout_number_en_cardinal(123_987_654_321).unwrap(),
+            "One Hundred and Twenty-Three Billion and Nine Hundred and Eighty-Seven Million and Six Hundred and Fifty-Four Thousand and Three Hundred and Twenty-One"
         );
     }
 }
