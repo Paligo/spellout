@@ -23,6 +23,10 @@ const ENGLISH_UNITS: [&str; 20] = [
     "Nineteen",
 ];
 
+const ENGLISH_TENS: [&str; 10] = [
+    "", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety",
+];
+
 #[derive(Debug)]
 enum Error {
     UnsupportedLocale,
@@ -94,6 +98,17 @@ fn spellout_number(locale: Locale, modifier: NumberModifier) -> Result<SpelloutN
 fn number_en_cardinal(num: u64, format: &str) -> Result<String, Error> {
     match num {
         0..=19 => Ok(ENGLISH_UNITS[num as usize].to_string()),
+        20..=99 => {
+            let tens = num / 10;
+            let units = num % 10;
+            let tens_str = ENGLISH_TENS[tens as usize].to_string();
+            if units == 0 {
+                Ok(tens_str)
+            } else {
+                let ones = number_en_cardinal(units, format)?;
+                Ok(format!("{}-{}", tens_str, ones))
+            }
+        }
         _ => Err(Error::NumberOutOfRange),
     }
 }
@@ -158,5 +173,19 @@ mod tests {
         let modifier = NumberModifier::new(NumberType::Cardinal, Case::Title, "".to_string());
         let spellout_number_en_cardinal = spellout_number(locale!("en"), modifier).unwrap();
         assert_eq!(spellout_number_en_cardinal(18).unwrap(), "Eighteen");
+    }
+
+    #[test]
+    fn test_spellout_number_20() {
+        let modifier = NumberModifier::new(NumberType::Cardinal, Case::Title, "".to_string());
+        let spellout_number_en_cardinal = spellout_number(locale!("en"), modifier).unwrap();
+        assert_eq!(spellout_number_en_cardinal(20).unwrap(), "Twenty");
+    }
+
+    #[test]
+    fn test_spellout_number_21() {
+        let modifier = NumberModifier::new(NumberType::Cardinal, Case::Title, "".to_string());
+        let spellout_number_en_cardinal = spellout_number(locale!("en"), modifier).unwrap();
+        assert_eq!(spellout_number_en_cardinal(21).unwrap(), "Twenty-One");
     }
 }
